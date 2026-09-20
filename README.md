@@ -78,6 +78,19 @@ minor-unit amount must be a multiple of 100. Stripe still validates account
 currency support, minimum payment amounts, and other restrictions.
 See [Stripe's currency documentation](https://docs.stripe.com/currencies).
 
+## Hosted Checkout Return Pages
+
+Generic, mobile-friendly payment return page templates are available in
+[`examples/checkout-pages`](examples/checkout-pages). They support English,
+Simplified Chinese, and Traditional Chinese with shared wording for Hong Kong
+and Taiwan. They follow the phone's language and allow manual selection.
+The success template displays “Payment successful”; the cancel template displays
+“Payment not completed”, since leaving Checkout does not establish a failed
+charge. Customize the branding, copy, and merchant navigation for your application,
+then set `SuccessURL` and `CancelURL` to the deployed HTTPS URLs. These static
+pages do not verify payment status. The example README explains deployment,
+backend confirmation, asynchronous payments, and cancellation behavior.
+
 ## Expiration and Idempotency
 
 Stripe Checkout sessions can expire between 30 minutes and 24 hours after creation.
@@ -161,19 +174,37 @@ has been fully refunded; partial refunds do not set it.
 
 ## Webhooks
 
-Configure an account-level **snapshot event** webhook in Stripe. Use an API version that
-matches the SDK's `stripe.APIVersion` (`2026-08-26.dahlia` for v86.4.2), and subscribe to:
+Configure a webhook for **Your account** using **snapshot events**. Use an API
+version that matches the SDK's `stripe.APIVersion` (`2026-08-26.dahlia` for
+v86.4.2). Subscribe to **all seven events below** for this driver's payment and
+refund lifecycle, including the asynchronous events even if the channel
+currently only accepts cards:
 
-- `checkout.session.completed`
-- `checkout.session.async_payment_succeeded`
-- `checkout.session.async_payment_failed`
-- `checkout.session.expired`
-- `refund.created`
-- `refund.updated`
-- `refund.failed`
+| Required event                             | How the driver uses it                                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `checkout.session.completed`               | Reads the completed Checkout Session's payment status; an asynchronous payment can still be Processing. |
+| `checkout.session.async_payment_succeeded` | Updates the payment after an asynchronous payment succeeds.                                             |
+| `checkout.session.async_payment_failed`    | Marks an unsuccessful asynchronous payment as Failure.                                                  |
+| `checkout.session.expired`                 | Marks an expired Checkout Session as Closed.                                                            |
+| `refund.created`                           | Records the initial refund status, which may already be Success.                                        |
+| `refund.updated`                           | Updates the refund status as it changes.                                                                |
+| `refund.failed`                            | Marks the refund as Failure.                                                                            |
+
+`payment_intent.*` and `charge.*` subscriptions are not required by this driver;
+those events are not handled as separate payment or refund callbacks.
+
+When integrating with Payment, use
+`https://<payment-domain>/payment/v1/notify/<channel-code>` as the webhook URL.
+`<channel-code>` is the configured channel's Code, not the `stripe_checkout`
+driver type. Do not use `SuccessURL` or `CancelURL` as the webhook URL.
 
 Set `WebhookSecret` to the endpoint's `whsec_...` signing secret. The Stripe CLI
 forwarding secret differs from the endpoint secret shown in the Dashboard.
+For separate live environments, register one endpoint for each environment,
+subscribe each endpoint to the same seven events, and configure each environment
+with its own endpoint's signing secret. Endpoints on the same Stripe account
+receive matching account events regardless of which environment created the
+order; the application must identify and acknowledge events for unrelated orders.
 `CreatePaymentRequest.CallbackUrl` and `CreateRefundRequest.CallbackUrl` are not used
 in Stripe requests. See [Stripe's webhook documentation](https://docs.stripe.com/webhooks).
 
@@ -213,6 +244,53 @@ completion time with a zero value when updating local records.
 The current implementation supports one-time Checkout payments for the account itself.
 It does not include subscriptions, Stripe Connect profit sharing, or standalone
 PaymentIntent/Elements flows. `Share == true` returns `ErrUnsupported`.
+
+## Sandbox Testing
+
+For Checkout card payments, no separate test buyer account is required. Enter
+Stripe's test card details directly on the hosted payment page. Sandbox payments
+do not move real funds; use test cards rather than real card details. See
+[Stripe's official test card documentation](https://docs.stripe.com/testing).
+
+1. Set `SecretKey` to the current Sandbox's `sk_test_...` API key.
+2. Register the webhook in the same Sandbox using the [seven required events](#webhooks).
+   Set `WebhookSecret` to that endpoint's `whsec_...` signing secret. For Payment,
+   use `https://<payment-domain>/payment/v1/notify/<channel-code>` as the endpoint.
+3. Create a payment through your registered channel, then open the returned
+   `PayLink` directly or scan a QR code containing it. Choose card payment.
+4. Enter one of the test cards below and submit the payment. For 3D Secure,
+   follow the simulated authentication prompts.
+
+| Scenario                 | Test card number      | Expected behavior                                      |
+| ------------------------ | --------------------- | ------------------------------------------------------ |
+| Successful Visa payment  | `4242 4242 4242 4242` | Payment succeeds.                                      |
+| Insufficient funds       | `4000 0000 0000 9995` | Payment attempt is declined with `insufficient_funds`. |
+| 3D Secure authentication | `4000 0027 6000 3184` | Every payment requires authentication.                 |
+
+Use these values for the remaining fields when requested:
+
+| Field           | Example value                              |
+| --------------- | ------------------------------------------ |
+| Expiration date | `12/34`, or another valid future date      |
+| CVC             | `123`, or any three digits for these cards |
+| Cardholder name | `Test User`                                |
+| Email           | `test@example.com`                         |
+
+For more scenarios, see Stripe's documentation on
+[declined payments](https://docs.stripe.com/testing#declined-payments) and
+[3D Secure testing](https://docs.stripe.com/testing#regulatory-cards).
+
+After a successful card payment, check the return page, the backend's payment
+status, and the `checkout.session.completed` webhook delivery. Confirm that the
+webhook receives HTTP 200 and that the application records Success. A visit to
+`SuccessURL` alone is not payment verification. Test and live webhook signing
+secrets are different; use the secret belonging to the Sandbox endpoint.
+See [Stripe's webhook documentation](https://docs.stripe.com/webhooks).
+
+A declined card attempt does not necessarily finish the order: Checkout allows
+another attempt, so the driver keeps an open, unpaid Session in Processing.
+Likewise, following `CancelURL` does not call `CancelPayment` or prove that a
+charge failed. These are expected behaviors when testing the result pages.
 
 ## Verification
 

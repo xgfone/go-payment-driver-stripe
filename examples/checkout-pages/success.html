@@ -1,0 +1,611 @@
+<!doctype html>
+<!-- Copyright 2026 xgfone. Licensed under the Apache License, Version 2.0. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#edf2f5" />
+    <title>Payment successful</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%279%27%20fill%3D%27%23172d3c%27%2F%3E%3Crect%20x%3D%276%27%20y%3D%279%27%20width%3D%2720%27%20height%3D%2714%27%20rx%3D%272%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-width%3D%272%27%2F%3E%3Cpath%20d%3D%27M6%2014h20m-16%205h4%27%20stroke%3D%27white%27%20stroke-width%3D%272%27%2F%3E%3C%2Fsvg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #172d3c;
+        --muted: #526271;
+        --accent: #13796f;
+        --accent-soft: #eaf5f1;
+        --border: #dfe7e9;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        font-synthesis: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      :lang(zh-Hant) {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+          "Microsoft JhengHei", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        /* Keep the available width unchanged when content needs scrolling. */
+        overflow-y: scroll;
+      }
+      body {
+        margin: 0;
+        min-width: 280px;
+        color: var(--ink);
+        background: #edf2f5;
+      }
+      body.cancel {
+        --accent: #9a5718;
+        --accent-soft: #fbf1e4;
+      }
+      select {
+        font: inherit;
+      }
+      select,
+      summary {
+        -webkit-tap-highlight-color: transparent;
+      }
+      select:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #236eb2;
+        outline-offset: 4px;
+      }
+      svg {
+        width: 24px;
+        height: 24px;
+        flex: 0 0 auto;
+      }
+      .shell {
+        width: min(100%, 504px);
+        margin: 0 auto;
+        padding: 32px 20px 28px;
+        padding-bottom: max(28px, env(safe-area-inset-bottom));
+      }
+      .topbar {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 26px;
+        padding: 0 4px;
+      }
+      .brand {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .brand-icon {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        color: white;
+        border-radius: 11px;
+        background: var(--ink);
+      }
+      .brand-icon svg {
+        width: 22px;
+        height: 22px;
+      }
+      .language {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 44px;
+        padding: 0 8px;
+        background: transparent;
+        border: 1px solid #d1dce1;
+        border-radius: 24px;
+        color: #354e5e;
+        font-size: 0.875rem;
+        cursor: pointer;
+      }
+      .language[hidden] {
+        display: none;
+      }
+      .language:hover {
+        background: white;
+      }
+      .language select {
+        min-height: 44px;
+        min-width: 0;
+        max-width: 100%;
+        padding: 0 2px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      .language svg {
+        width: 17px;
+        height: 17px;
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: white;
+        overflow: hidden;
+        box-shadow: 0 14px 52px -24px #25495c40;
+      }
+      .hero {
+        padding: 32px 30px 0;
+      }
+      .hero-icon {
+        width: 70px;
+        height: 70px;
+        border: 1px solid color-mix(in srgb, var(--accent) 18%, white);
+        border-radius: 22px;
+        color: var(--accent);
+        background: var(--accent-soft);
+        display: grid;
+        place-items: center;
+        margin-bottom: 27px;
+      }
+      .hero-icon svg {
+        width: 35px;
+        height: 35px;
+      }
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 750;
+        letter-spacing: 0.13em;
+        line-height: 1.6;
+      }
+      h1 {
+        white-space: pre-line;
+        margin: 0;
+        font-size: clamp(2rem, 7.5vw, 2.375rem);
+        font-weight: 750;
+        letter-spacing: -0.035em;
+        line-height: 1.35;
+        text-wrap: balance;
+      }
+      .description {
+        margin: 19px 0 26px;
+        font-size: 1rem;
+        line-height: 1.8;
+        color: var(--muted);
+      }
+      .callout {
+        display: flex;
+        gap: 13px;
+        padding: 18px;
+        background: var(--accent-soft);
+        border-radius: 16px;
+      }
+      .callout > svg {
+        color: var(--accent);
+        width: 22px;
+        height: 22px;
+        margin-top: 1px;
+      }
+      .callout-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        line-height: 1.5;
+        margin: 0 0 5px;
+      }
+      .callout-body {
+        font-size: 0.875rem;
+        line-height: 1.7;
+        color: #455960;
+        margin: 0;
+      }
+      .help {
+        margin-top: 27px;
+        padding: 0 30px;
+        border-top: 1px solid var(--border);
+        background: #fbfcfd;
+      }
+      summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 20px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        font-size: 0.875rem;
+        line-height: 1.65;
+        font-weight: 650;
+      }
+      summary::-webkit-details-marker {
+        display: none;
+      }
+      summary svg {
+        width: 18px;
+        height: 18px;
+        color: #617581;
+        transition: transform 0.15s ease;
+      }
+      details[open] summary svg {
+        transform: rotate(90deg);
+      }
+      .help p {
+        margin: -2px 0 22px;
+        color: var(--muted);
+        font-size: 0.9375rem;
+        line-height: 1.8;
+      }
+      .footer {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 8px;
+        padding: 22px 22px 0;
+        color: #5d6d78;
+      }
+      .footer svg {
+        width: 16px;
+        height: 16px;
+        margin-top: 3px;
+      }
+      .footer p {
+        margin: 0;
+        max-width: 330px;
+        font-size: 0.8125rem;
+        line-height: 1.8;
+      }
+      /* Stack all translations in one grid cell to reserve their largest size.
+         Hidden translations take up space but are excluded from accessibility. */
+      .translated {
+        display: grid;
+        min-width: 0;
+      }
+      .translation {
+        grid-area: 1 / 1;
+        min-width: 0;
+        visibility: hidden;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+      }
+      .translation:lang(zh-Hant) {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+          "Microsoft JhengHei", sans-serif;
+      }
+      .translation.is-active {
+        visibility: visible;
+      }
+      .brand {
+        min-width: 0;
+        line-height: 1.5;
+      }
+      .brand-icon {
+        flex: 0 0 36px;
+      }
+      .language {
+        flex: 0 0 136px;
+        width: 136px;
+        height: 46px;
+      }
+      .language select {
+        flex: 1;
+        width: 100%;
+        /* Avoid focus-triggered zoom on mobile browsers. */
+        font-size: 16px;
+      }
+      .callout > div,
+      summary > .translated {
+        flex: 1;
+        min-width: 0;
+      }
+      @media (min-width: 700px) {
+        .shell {
+          padding-top: 64px;
+        }
+      }
+      @media (max-width: 359px) {
+        .shell {
+          padding: 20px 12px;
+        }
+        .topbar {
+          gap: 8px;
+          margin-bottom: 18px;
+        }
+        .brand {
+          gap: 8px;
+          font-size: 0.875rem;
+        }
+        .hero {
+          padding: 26px 22px 0;
+        }
+        .help {
+          padding: 0 22px;
+        }
+        .callout {
+          padding: 15px;
+          gap: 10px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+      @media print {
+        body {
+          background: white;
+        }
+        .shell {
+          padding-top: 0;
+        }
+        .language {
+          display: none;
+        }
+        .card {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="success">
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="3" />
+              <path d="M2 9h20M6 15h4" /></svg></span
+          ><span data-i18n="brand">Payment</span>
+        </div>
+        <div id="language-control" class="language" hidden>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a18 18 0 0 1 0 18 18 18 0 0 1 0-18Z" />
+          </svg>
+          <select id="language" aria-label="Choose language">
+            <option value="en" lang="en">English</option>
+            <option value="zh-Hans" lang="zh-Hans">简体中文</option>
+            <option value="zh-Hant" lang="zh-Hant">繁體中文</option>
+          </select>
+        </div>
+      </header>
+      <main class="card" aria-labelledby="heading">
+        <div class="hero">
+          <div class="hero-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="m8 12 3 3 5-6" />
+            </svg>
+          </div>
+          <p class="eyebrow" data-i18n="eyebrow">THANK YOU</p>
+          <h1 id="heading" data-i18n="heading">Payment successful</h1>
+          <p class="description" data-i18n="description">
+            You can return to the merchant to view your order.
+          </p>
+          <aside class="callout" aria-labelledby="callout-title">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v6m0-10v.01" />
+            </svg>
+            <div>
+              <p
+                class="callout-title"
+                id="callout-title"
+                data-i18n="calloutTitle"
+              >
+                Please do not pay again
+              </p>
+              <p class="callout-body" data-i18n="calloutBody">
+                Your order may take a moment to update.
+              </p>
+            </div>
+          </aside>
+        </div>
+        <details class="help">
+          <summary>
+            <span data-i18n="helpTitle">Order not updated?</span
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m9 5 7 7-7 7" />
+            </svg>
+          </summary>
+          <p data-i18n="helpBody">
+            Check your order again shortly. If you need help, contact the
+            merchant with your order details.
+          </p>
+        </details>
+      </main>
+      <footer class="footer">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v6m0-10v.01" />
+        </svg>
+        <p data-i18n="footer">
+          You can close this page. Check the merchant’s order record for the
+          final payment status.
+        </p>
+      </footer>
+    </div>
+    <!-- Informational only: this page never confirms, cancels, or refunds a payment. -->
+    <script>
+      "use strict";
+      (() => {
+        const messages = {
+          en: {
+            brand: "Payment",
+            languageLabel: "Choose language",
+            footer:
+              "You can close this page. Check the merchant’s order record for the final payment status.",
+            title: "Payment successful",
+            eyebrow: "THANK YOU",
+            heading: "Payment successful",
+            description: "You can return to the merchant to view your order.",
+            calloutTitle: "Please do not pay again",
+            calloutBody: "Your order may take a moment to update.",
+            helpTitle: "Order not updated?",
+            helpBody:
+              "Check your order again shortly. If you need help, contact the merchant with your order details.",
+          },
+          "zh-Hans": {
+            brand: "支付结果",
+            languageLabel: "选择语言",
+            footer: "你可以关闭此页面。最终支付状态请以商户的订单记录为准。",
+            title: "支付成功",
+            eyebrow: "感谢你的支付",
+            heading: "支付成功",
+            description: "你可以返回商户页面，查看订单详情。",
+            calloutTitle: "请勿重复支付",
+            calloutBody: "订单状态更新可能需要片刻，请稍后查看。",
+            helpTitle: "订单状态还没有更新？",
+            helpBody:
+              "请稍后再查看订单状态。如需帮助，请联系商户，并提供订单信息。",
+          },
+          "zh-Hant": {
+            brand: "付款結果",
+            languageLabel: "選擇語言",
+            footer: "你可以關閉此頁面。最終付款狀態請以商戶的訂單記錄為準。",
+            title: "付款成功",
+            eyebrow: "感謝你的付款",
+            heading: "付款成功",
+            description: "你可以返回商戶頁面，查看訂單詳情。",
+            calloutTitle: "請勿重複付款",
+            calloutBody: "更新訂單狀態可能需要一點時間，請稍後查看。",
+            helpTitle: "訂單狀態仍未更新？",
+            helpBody:
+              "請稍後再查看訂單狀態。如需協助，請聯絡商戶，並提供訂單資料。",
+          },
+        };
+        const storageKey = "stripe-checkout-return-language";
+        function normalize(value) {
+          const parts = (value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/_/g, "-")
+            .split("-");
+          if (parts[0] === "en") return "en";
+          if (parts[0] !== "zh") return "";
+          // An explicit script takes precedence over the region.
+          if (parts[1] === "hant") return "zh-Hant";
+          if (parts[1] === "hans") return "zh-Hans";
+          if (["hk", "tw", "mo"].includes(parts[1])) return "zh-Hant";
+          // Preserve existing ?lang=zh links and saved preferences.
+          return "zh-Hans";
+        }
+        let saved = "";
+        try {
+          saved = localStorage.getItem(storageKey) || "";
+        } catch (_) {}
+        const requested = new URLSearchParams(window.location.search).get(
+          "lang",
+        );
+        const preferred = (navigator.languages || [navigator.language])
+          .map(normalize)
+          .find(Boolean);
+        let language =
+          normalize(requested) || normalize(saved) || preferred || "en";
+        const control = document.getElementById("language-control");
+        const select = document.getElementById("language");
+        // Build once so switching languages only changes visibility, not layout.
+        const translations = Array.from(
+          document.querySelectorAll("[data-i18n]"),
+          (element) => {
+            const layers = Object.entries(messages).map(([locale, copy]) => {
+              const layer = document.createElement("span");
+              layer.className = "translation";
+              layer.lang = locale;
+              layer.textContent = copy[element.dataset.i18n];
+              return layer;
+            });
+            element.classList.add("translated");
+            element.replaceChildren(...layers);
+            return layers;
+          },
+        );
+        function render() {
+          const copy = messages[language];
+          document.documentElement.lang = language;
+          document.title = copy.title;
+          translations.forEach((layers) => {
+            layers.forEach((layer) => {
+              const active = layer.lang === language;
+              layer.classList.toggle("is-active", active);
+              layer.setAttribute("aria-hidden", String(!active));
+            });
+          });
+          document.querySelectorAll("[data-i18n-label]").forEach((element) => {
+            element.setAttribute("aria-label", copy[element.dataset.i18nLabel]);
+          });
+          select.setAttribute("aria-label", copy.languageLabel);
+          select.value = language;
+        }
+        render();
+        control.hidden = false;
+        select.addEventListener("change", () => {
+          language = normalize(select.value) || "en";
+          try {
+            localStorage.setItem(storageKey, language);
+          } catch (_) {}
+          render();
+        });
+      })();
+    </script>
+  </body>
+</html>
