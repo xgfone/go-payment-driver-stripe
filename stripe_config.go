@@ -29,9 +29,15 @@ const Type = "stripe"
 type Config struct {
 	WebhookSecret string
 
-	SecretKey  string
-	SuccessURL string
-	CancelURL  string
+	SecretKey string
+
+	// Default browser return URLs when the corresponding request field is empty.
+	// Only defaults have PaymentId appended; they must not already contain that
+	// query parameter. Stripe placeholders such as "{CHECKOUT_SESSION_ID}" are
+	// preserved. Hosted Checkout requires ReturnUrl at payment creation;
+	// CancelUrl is optional.
+	ReturnUrl string
+	CancelUrl string
 
 	// Currencies is the required merchant currency allowlist, not Stripe's global list.
 	Currencies []string
@@ -50,14 +56,11 @@ func (c *Config) init() error {
 		return errors.New("missing WebhookSecret")
 	}
 
-	for _, field := range []struct{ name, value string }{
-		{"SuccessURL", c.SuccessURL},
-		{"CancelURL", c.CancelURL},
-	} {
-		u, err := url.Parse(field.value)
-		if err != nil || u.Host == "" || (u.Scheme != "https" && u.Scheme != "http") {
-			return fmt.Errorf("%s must be an absolute HTTP(S) URL", field.name)
-		}
+	if err := validateCheckoutURL("ReturnUrl", c.ReturnUrl); err != nil {
+		return err
+	}
+	if err := validateCheckoutURL("CancelUrl", c.CancelUrl); err != nil {
+		return err
 	}
 
 	if len(c.Currencies) == 0 {
@@ -84,6 +87,21 @@ func (c *Config) init() error {
 			return errors.New("empty payment method type")
 		}
 		c.PaymentMethodTypes[i] = method
+	}
+
+	return nil
+}
+
+// Validate only the format; keep the supplied URL and any Stripe placeholders intact.
+// Empty defaults are allowed because callers can supply URLs per payment.
+func validateCheckoutURL(name, value string) error {
+	if value == "" {
+		return nil
+	}
+
+	u, err := url.Parse(value)
+	if err != nil || u.Host == "" || (u.Scheme != "https" && u.Scheme != "http") {
+		return fmt.Errorf("%s must be an absolute HTTP(S) URL", name)
 	}
 
 	return nil

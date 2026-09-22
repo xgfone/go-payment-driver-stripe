@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -73,6 +74,18 @@ func (d *Driver) CreatePayment(ctx context.Context, req driver.CreatePaymentRequ
 		return info, err
 	}
 
+	returnUrl := checkoutURL(req.ReturnUrl, d.config.ReturnUrl, req.PaymentId)
+	cancelUrl := checkoutURL(req.CancelUrl, d.config.CancelUrl, req.PaymentId)
+	if err := validateCheckoutURL("ReturnUrl", returnUrl); err != nil {
+		return info, driver.ErrBadRequest.WithError(err)
+	}
+	if err := validateCheckoutURL("CancelUrl", cancelUrl); err != nil {
+		return info, driver.ErrBadRequest.WithError(err)
+	}
+	if returnUrl == "" {
+		return info, driver.ErrBadRequest.WithReason("missing ReturnUrl")
+	}
+
 	metadata := map[string]string{"payment_id": req.PaymentId}
 	params := &stripe.CheckoutSessionCreateParams{
 		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
@@ -80,8 +93,8 @@ func (d *Driver) CreatePayment(ctx context.Context, req driver.CreatePaymentRequ
 		Metadata:  metadata,
 		ExpiresAt: expiresAt,
 
-		CancelURL:  stripe.String(d.config.CancelURL),
-		SuccessURL: stripe.String(d.config.SuccessURL),
+		CancelURL:  stringptr(cancelUrl),
+		SuccessURL: stringptr(returnUrl),
 
 		ClientReferenceID: stripe.String(req.PaymentId),
 
@@ -124,6 +137,50 @@ func (d *Driver) CreatePayment(ctx context.Context, req driver.CreatePaymentRequ
 		ChannelPaymentId: session.ID,
 		ChannelData:      driver.EncodeChannelData(sessionChannelData(session)),
 	}, nil
+}
+
+func stringptr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func checkoutURL(requestURL, defaultURL, paymentID string) string {
+	if requestURL != "" {
+		return requestURL
+	}
+	if defaultURL == "" {
+		return ""
+	}
+
+	// Append to the original query before the fragment without re-encoding any
+	// existing content, including Stripe placeholders and repeated parameters.
+	base, fragment, hasFragment := strings.Cut(defaultURL, "#")
+	separator := "?"
+	if _, query, ok := strings.Cut(base, "?"); ok {
+		separator = "&"
+		if query == "" || strings.HasSuffix(query, "&") {
+			separator = ""
+		}
+	}
+
+	paymentID = url.QueryEscape(paymentID)
+
+	var buf strings.Builder
+	buf.Grow(len(base) + len(separator) + 12 + len(paymentID) + len(fragment)) // 12 contains #
+
+	_, _ = buf.WriteString(base)
+	_, _ = buf.WriteString(separator)
+	_, _ = buf.WriteString("PaymentId=")
+	_, _ = buf.WriteString(paymentID)
+
+	if hasFragment {
+		_ = buf.WriteByte('#')
+		_, _ = buf.WriteString(fragment)
+	}
+
+	return buf.String()
 }
 
 func checkoutExpiry(req driver.CreatePaymentRequest) (*int64, error) {

@@ -6,8 +6,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stripe/stripe-go/v86 v86.4.2 h1:ITFadkLOU2nlPvVJJdT6WwpScsc8q7X0dR4yrdEr7os=
 github.com/stripe/stripe-go/v86 v86.4.2/go.mod h1:Co7QRXCKGNOPTugAdvjgRo+KcMtd9hxy+pZMN0yThsQ=
-github.com/xgfone/go-payment-driver v0.10.3 h1:nfb8bNuICMMWhnE0kdW0Q0u5147fRg9cFzWRaaQJPU8=
-github.com/xgfone/go-payment-driver v0.10.3/go.mod h1:h2HS6xYXkD0GLtb3P7/0qiO6WS4QZEG5nh4C2O/VlaU=
+github.com/xgfone/go-payment-driver v0.10.4 h1:Rp6Yaa13oWieLtdnYuhFoKG3N7GsQzBhuREZuAtR8r8=
+github.com/xgfone/go-payment-driver v0.10.4/go.mod h1:h2HS6xYXkD0GLtb3P7/0qiO6WS4QZEG5nh4C2O/VlaU=
 github.com/xgfone/go-toolkit v0.23.0 h1:jpUEyNRLoAnx4bdILplLc5BCsgpQtu9bp8kySnIH9Gc=
 github.com/xgfone/go-toolkit v0.23.0/go.mod h1:5okC8n/b3Qy4ryG071PLr6ixX/RZ7kP+2IFhsFFrh6Q=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=

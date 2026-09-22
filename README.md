@@ -30,8 +30,8 @@ func CreatePayment(ctx context.Context) (driver.PayLinkInfo, error) {
     config, err := json.Marshal(stripe.Config{
         SecretKey:          os.Getenv("STRIPE_SECRET_KEY"),
         WebhookSecret:      os.Getenv("STRIPE_WEBHOOK_SECRET"),
-        SuccessURL:         "https://example.com/paid?session_id={CHECKOUT_SESSION_ID}",
-        CancelURL:          "https://example.com/cancel",
+        ReturnUrl:          "https://example.com/paid?session_id={CHECKOUT_SESSION_ID}",
+        CancelUrl:          "https://example.com/cancel",
         Currencies:         []string{"USD", "EUR"},
         PaymentMethodTypes: []string{"card"},
     })
@@ -53,14 +53,35 @@ func CreatePayment(ctx context.Context) (driver.PayLinkInfo, error) {
 }
 ```
 
-`SecretKey`, `WebhookSecret`, `SuccessURL`, `CancelURL`, and `Currencies` are
-required. `Currencies` lists the currencies allowed by the merchant. The payment
-currency comes directly from the request's `PaymentCurrency` and must be in that
-list; there is no default currency. Configured currency codes are normalized to
+`SecretKey`, `WebhookSecret`, and `Currencies` are required. `ReturnUrl`
+and `CancelUrl` in `Config` are optional defaults; they replace the former
+`SuccessURL` and `CancelURL` configuration fields. `Currencies` lists the
+currencies allowed by the merchant. The payment currency comes directly from
+the request's `PaymentCurrency` and must be in that list; there is no default
+currency. Configured currency codes are normalized to
 uppercase and sent to Stripe in lowercase. `PaymentMethodTypes` defaults to `card`.
 Other methods must be enabled on the Stripe account and meet their regional,
 currency, and other requirements. Use `sk_test_...` for testing and `sk_live_...`
 for production; no separate Sandbox flag is needed.
+
+`CreatePaymentRequest.ReturnUrl` and `CancelUrl` independently override the
+corresponding configuration defaults. Non-empty request URLs are passed through
+unchanged, without appending `PaymentId`. When a request URL is empty, the driver
+uses its configured default and appends the query parameter `PaymentId`, escaping
+only the payment ID. Existing URL content, including query order, encoding,
+fragments, and Stripe placeholders such as `session_id={CHECKOUT_SESSION_ID}`,
+is preserved, and the stored configuration is never modified. Defaults must not
+already contain the reserved `PaymentId` query parameter; the driver does not
+check or correct violations of this rule.
+
+For hosted Checkout, `ReturnUrl` maps to Stripe's `success_url` and must be
+available from the request or configuration; otherwise `CreatePayment` returns
+`ErrBadRequest` identifying the missing `ReturnUrl`. `CancelUrl` maps to
+`cancel_url` and is omitted when neither source provides it. Neither URL is used
+as a fallback for the other. Non-empty URLs must be absolute HTTP(S) URLs; callers
+remain responsible for validating allowed destinations and should provide request
+URLs when they require specific return pages. See
+[Stripe's Checkout parameters](https://docs.stripe.com/api/checkout/sessions/create).
 
 `PayLink` is a Checkout URL that can be opened through a redirect or encoded
 as a QR code. Its `LinkType` is `code_url`. Persist `ChannelPaymentId` (`cs_...`)
@@ -87,7 +108,7 @@ and Taiwan. They follow the phone's language and allow manual selection.
 The success template displays “Payment successful”; the cancel template displays
 “Payment not completed”, since leaving Checkout does not establish a failed
 charge. Customize the branding, copy, and merchant navigation for your application,
-then set `SuccessURL` and `CancelURL` to the deployed HTTPS URLs. These static
+then set `ReturnUrl` and `CancelUrl` to the deployed HTTPS URLs. These static
 pages do not verify payment status. The example README explains deployment,
 backend confirmation, asynchronous payments, and cancellation behavior.
 
@@ -196,7 +217,7 @@ those events are not handled as separate payment or refund callbacks.
 When integrating with Payment, use
 `https://<payment-domain>/payment/v1/notify/<channel-code>` as the webhook URL.
 `<channel-code>` is the configured channel's Code, not the `stripe_checkout`
-driver type. Do not use `SuccessURL` or `CancelURL` as the webhook URL.
+driver type. Do not use `ReturnUrl` or `CancelUrl` as the webhook URL.
 
 Set `WebhookSecret` to the endpoint's `whsec_...` signing secret. The Stripe CLI
 forwarding secret differs from the endpoint secret shown in the Dashboard.
@@ -232,7 +253,7 @@ so Stripe can retry delivery.
 Webhooks may arrive more than once or out of order. The application must process
 payment and refund IDs idempotently and prevent stale Processing events from
 overwriting confirmed success states. Query the current status when necessary.
-A browser visiting `SuccessURL` is not proof of payment.
+A browser visiting `ReturnUrl` is not proof of payment.
 
 Successful payment events provide `PayerPaidAt`. Refund events provide `RefundedAt`
 when a refund is created in the succeeded state or an update changes its status to
@@ -283,13 +304,13 @@ For more scenarios, see Stripe's documentation on
 After a successful card payment, check the return page, the backend's payment
 status, and the `checkout.session.completed` webhook delivery. Confirm that the
 webhook receives HTTP 200 and that the application records Success. A visit to
-`SuccessURL` alone is not payment verification. Test and live webhook signing
+`ReturnUrl` alone is not payment verification. Test and live webhook signing
 secrets are different; use the secret belonging to the Sandbox endpoint.
 See [Stripe's webhook documentation](https://docs.stripe.com/webhooks).
 
 A declined card attempt does not necessarily finish the order: Checkout allows
 another attempt, so the driver keeps an open, unpaid Session in Processing.
-Likewise, following `CancelURL` does not call `CancelPayment` or prove that a
+Likewise, following `CancelUrl` does not call `CancelPayment` or prove that a
 charge failed. These are expected behaviors when testing the result pages.
 
 ## Verification

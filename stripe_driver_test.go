@@ -27,8 +27,8 @@ func testConfig() Config {
 		WebhookSecret: "whsec_local",
 
 		SecretKey:  "sk_test_local",
-		SuccessURL: "https://example.com/success?session_id={CHECKOUT_SESSION_ID}",
-		CancelURL:  "https://example.com/cancel",
+		ReturnUrl:  "https://example.com/success?session_id={CHECKOUT_SESSION_ID}",
+		CancelUrl:  "https://example.com/cancel",
 		Currencies: []string{"USD"}}
 }
 
@@ -143,8 +143,8 @@ func TestConfig(t *testing.T) {
 	}{
 		{"key", func(c *Config) { c.SecretKey = "" }},
 		{"webhook", func(c *Config) { c.WebhookSecret = "" }},
-		{"success", func(c *Config) { c.SuccessURL = "/success" }},
-		{"cancel", func(c *Config) { c.CancelURL = "javascript:alert(1)" }},
+		{"return", func(c *Config) { c.ReturnUrl = "/success" }},
+		{"cancel", func(c *Config) { c.CancelUrl = "javascript:alert(1)" }},
 		{"missing currencies", func(c *Config) { c.Currencies = nil }},
 		{"invalid currency", func(c *Config) { c.Currencies = []string{"US"} }},
 		{"currencies", func(c *Config) { c.Currencies = []string{""} }},
@@ -172,6 +172,12 @@ func TestConfig(t *testing.T) {
 	c.Currencies = []string{"jpy"}
 	if err := c.Init(); err != nil || !reflect.DeepEqual(c.Currencies, []string{"JPY"}) {
 		t.Fatalf("currencies = %v, %v", c.Currencies, err)
+	}
+
+	c = testConfig()
+	c.ReturnUrl, c.CancelUrl = "", ""
+	if _, err := newDriver(builder.Get("stripe_checkout"), c); err != nil {
+		t.Fatalf("default return URLs must be optional: %v", err)
 	}
 }
 
@@ -203,7 +209,8 @@ func TestCreatePayment(t *testing.T) {
 			"payment_method_types[0]":   "card",
 			"adaptive_pricing[enabled]": "false",
 
-			"success_url": dSuccessURL(),
+			"success_url": "https://example.com/success?session_id={CHECKOUT_SESSION_ID}&PaymentId=pay_1",
+			"cancel_url":  "https://example.com/cancel?PaymentId=pay_1",
 		} {
 			if form.Get(k) != want {
 				t.Errorf("%s = %q, want %q", k, form.Get(k), want)
@@ -243,8 +250,6 @@ func TestCreatePayment(t *testing.T) {
 		t.Fatal("creation retries are not idempotent")
 	}
 }
-
-func dSuccessURL() string { return testConfig().SuccessURL }
 
 func TestCreateValidationAndExpiry(t *testing.T) {
 	d := testDriver(t, nil)

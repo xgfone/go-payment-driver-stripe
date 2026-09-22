@@ -38,13 +38,21 @@ and exposed to assistive technology.
 
    ```json
    {
-     "SuccessURL": "https://payments.example.com/stripe/success.html",
-     "CancelURL": "https://payments.example.com/stripe/cancel.html"
+     "ReturnUrl": "https://payments.example.com/stripe/success.html",
+     "CancelUrl": "https://payments.example.com/stripe/cancel.html"
    }
    ```
 
 3. Create a new payment after updating the configuration. Existing Checkout
    Sessions retain the return URLs supplied when they were created.
+
+These are default URLs. The driver appends `PaymentId` when using a default,
+preserving existing query parameters, fragments, and Stripe placeholders.
+Do not include the reserved `PaymentId` parameter in configured defaults.
+To choose a destination per payment, set `CreatePaymentRequest.ReturnUrl` or
+`CancelUrl`; each non-empty request URL is used unchanged, without adding
+`PaymentId`. `ReturnUrl` is required at payment creation from either source;
+`CancelUrl` is optional. The two URLs never fall back to each other.
 
 The URLs can optionally include `?lang=en`, `?lang=zh-Hans`, or `?lang=zh-Hant`
 to choose the initial language explicitly; the language menu remains available.
@@ -91,8 +99,8 @@ to Stripe's official test card documentation.
 1. The application creates a payment and presents the Checkout URL as a link,
    redirect, or QR code.
 2. The customer opens Stripe Checkout and pays.
-3. Stripe redirects the phone to `SuccessURL` after completing Checkout, or to
-   `CancelURL` when the customer uses Checkout's back/cancel navigation.
+3. Stripe redirects the phone to `ReturnUrl` after completing Checkout, or to
+   `CancelUrl` when the customer uses Checkout's back/cancel navigation.
 4. Independently, Stripe sends events to the merchant's backend. The application
    uses verified payment records to update the order and fulfill the purchase.
 
@@ -104,14 +112,14 @@ Customers may also close their browsers without visiting either page. Continue
 using verified backend payment status to decide when to fulfill the order. See
 [Stripe's success page guide](https://docs.stripe.com/payments/checkout/custom-success-page?payment-ui=stripe-hosted).
 
-`CancelURL` is the destination for Checkout's back button, not a generic payment
+`CancelUrl` is the destination for Checkout's back button, not a generic payment
 failure handler. Card errors can remain on Checkout so the customer can retry;
 closing the browser does not guarantee a redirect. Leaving Checkout does not
 call the driver's `CancelPayment` method. See
 [Stripe's Checkout Session parameters](https://docs.stripe.com/api/checkout/sessions/create).
 
 If your application needs a definitive “Payment failed” page, display that state
-based on a backend-confirmed payment failure rather than a visit to `CancelURL`.
+based on a backend-confirmed payment failure rather than a visit to `CancelUrl`.
 
 ## Customization
 
